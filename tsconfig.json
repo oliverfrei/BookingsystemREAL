@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+      "moduleResolution": "node",
+      "jsx": "react",
+      "esModuleInterop": true,
+      "allowSyntheticDefaultImports": true,
+      "resolveJsonModule": true,
+      "strict": true,
+      "types": ["vite/client"]
+    },
+    "include": ["src"]
+  }
+  

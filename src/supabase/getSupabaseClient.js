@@ -1,17 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js';
 
-// #######################################################
-// MODIFY THESE VARIABLES, TO YOUR SUPABASE INSTALLATION.
-// #######################################################
-const SUPABASE_URL = "https://xyzcompany.supabase.co";
-const PUBLIC_ANON_KEY = "public-anon-key";
-// #######################################################
+const supabaseUrl = 'https://zswzttlhbutgwdbeezbs.supabase.co'; // Your Supabase URL
+const supabaseKey =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpzd3p0dGxoYnV0Z3dkYmVlemJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE4NjAzNjIsImV4cCI6MjA0NzQzNjM2Mn0.eL5eYTlnOJcuB1hEp2EyrKkEG0hsCWF20O4SWWFDytQ'; // Your API key
 
-let supabaseClientSingletong = undefined;
-export function getSupabaseClient() {
-  if (supabaseClientSingletong == undefined) {
-    supabaseClientSingletong = createClient(SUPABASE_URL, PUBLIC_ANON_KEY);
-  }
-
-  return supabaseClientSingletong;
-}
+export const getSupabaseClient = () => {
+  return createClient(supabaseUrl, supabaseKey);
+};
