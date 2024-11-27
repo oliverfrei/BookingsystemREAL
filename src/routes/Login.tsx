@@ -1,21 +1,34 @@
 import React, { useState } from 'react';
 import { Container, TextInput, PasswordInput, Button, Title, Paper } from '@mantine/core';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import supabase from '../supabase/getSupabaseClient';
+
+
 
 function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
   const navigate = useNavigate(); // Initialize navigate
 
-  const handleLogin = () => {
-    // Dummy login validation
-    if (email === 'test@test.com' && password === 'password') {
-      alert('Login successful!');
-      navigate('/LokaleOversigt'); // Navigate to LokaleOversigt page
-    } else {
-      alert('Invalid email or password');
+  const handleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+  
+      if (error) {
+        console.error('Error logging in:', error);
+        alert('Forkert email eller adgangskode');
+      } else {
+        alert('Login successful!');
+        navigate('/LokaleOversigt');
+      }
+    } catch (error) {
+      console.error('Error logging in:', error);
     }
   };
+  
 
   return (
     <Container size={420} my={40}>
