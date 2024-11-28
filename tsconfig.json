@@ -10,7 +10,9 @@
     "resolveJsonModule": true,
     "strict": true,
     "types": ["vite/client"],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "allowJs": true
   },
-  "include": ["src"]
+  "include": ["src/**/*"],
+  "exclude": ["src/supabase/getSupabaseClient.js"] // Ekskluder denne fil
 }

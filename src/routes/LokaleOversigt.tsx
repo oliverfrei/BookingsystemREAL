@@ -12,6 +12,7 @@ import {
 } from '@mantine/core';
 import { DatePicker } from '@mantine/dates';
 import dayjs from 'dayjs';
+import { useNavigate } from 'react-router-dom';
 import supabase from '../supabase/getSupabaseClient';
 
 // Import PNG-filer
@@ -21,18 +22,19 @@ import Plan3 from '../images/Plan3.png';
 import Plan4 from '../images/Plan4.png';
 
 const LokaleOversigt = () => {
-  // States
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<number | undefined>(undefined);
-  const [modalRoom, setModalRoom] = useState<any>(null); // Lokale for modal
+  const [modalRoom, setModalRoom] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); // Tilføjet for "Mine bookinger"
+  const [modalBookings, setModalBookings] = useState<any[]>([]); // Tilføjet til at gemme bookinger
+  const navigate = useNavigate();
 
   const timeOptions = ['09:00-11:00', '11:00-13:00', '13:00-15:00', '15:00-17:00'];
 
-  // Dummy data for rooms
   const rooms = [
     { id: 28, plan: '2' },
     { id: 221, plan: '2' },
@@ -46,48 +48,73 @@ const LokaleOversigt = () => {
     { id: 43, plan: '4' },
   ];
 
-  // Fetch bookings and user from Supabase
+  // Henter brugerens session ved initial load
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user || null;
-      console.log('Fetched user:', user);
-      setUser(user);
+      setUser(session?.user || null);
     };
 
     fetchUser();
   }, []);
 
+  // Henter bookings, når brugeren er logget ind
   useEffect(() => {
-    if (user) {
-      fetchBookings();
-    }
+    if (user) fetchBookings();
   }, [user]);
 
   const fetchBookings = async () => {
+    if (!user) return;
+
     const { data, error } = await supabase
       .from('bookings')
       .select('*')
-      .eq('user_id', user?.id);
+      .eq('user_id', user.id);
 
     if (error) {
-      console.error('Error fetching bookings:', error);
+      console.error('Fejl ved hentning af bookinger:', error.message);
     } else {
-      setBookings(data);
-      console.log('Fetched bookings:', data);
+      setBookings(data || []);
     }
   };
 
-  // Handlers
   const handleRoomClick = (room: any) => {
     setModalRoom(room);
-    setModalOpen(true); // Åbn modal
+    setModalOpen(true);
   };
 
-  const handleRoomSelect = () => {
-    setSelectedRoom(modalRoom.id); // Gem valgt lokale
-    setModalOpen(false); // Luk modal
+  const handleSubmit = () => {
+    if (!selectedDate || !selectedTime || !selectedRoom) {
+      alert('Udfyld venligst alle felter for at booke et lokale.');
+      return;
+    }
+  
+    const selectedPlan = rooms.find((room) => room.id === selectedRoom)?.plan;
+  
+    if (!selectedPlan) {
+      alert('Ugyldigt lokale eller etage.');
+      return;
+    }
+  
+    const formattedDate = dayjs(selectedDate).format('DD/MM/YYYY');
+  
+    // Check for korrekt dato
+    if (!dayjs(selectedDate).isValid()) {
+      alert('Ugyldig dato.');
+      return;
+    }
+  
+    navigate('/BookingConfirmation', {
+      state: {
+        room: selectedRoom,
+        date: formattedDate,
+        time: selectedTime,
+        plan: selectedPlan,
+        capacity: 4,
+      },
+    });
   };
+  
 
   const getPlanImage = (plan: string) => {
     switch (plan) {
@@ -104,75 +131,56 @@ const LokaleOversigt = () => {
     }
   };
 
-  const handleSubmit = async () => {
-    if (selectedRoom && selectedDate && selectedTime) {
-      const [startHour, endHour] = selectedTime.split('-').map((t) => Number(t.split(':')[0]));
-      const startTime = dayjs(selectedDate).hour(startHour).minute(0).second(0).toISOString();
-      const endTime = dayjs(selectedDate).hour(endHour).minute(0).second(0).toISOString();
-
-      try {
-        const { data: conflictingBookings, error: conflictError } = await supabase
-          .from('bookings')
-          .select('*')
-          .eq('lokale_id', selectedRoom)
-          .or(`start_time.lt.${endTime},end_time.gt.${startTime}`);
-
-        if (conflictError) {
-          console.error('Error checking for conflicts:', conflictError);
-          alert('Der opstod en fejl ved kontrol af konflikter.');
-          return;
-        }
-
-        if (conflictingBookings && conflictingBookings.length > 0) {
-          alert('Lokalet er allerede booket på dette tidspunkt. Vælg venligst et andet lokale eller tidspunkt.');
-          return;
-        }
-
-        const { error } = await supabase.from('bookings').insert([
-          {
-            lokale_id: selectedRoom,
-            user_id: user.id,
-            start_time: startTime,
-            end_time: endTime,
-          },
-        ]);
-
-        if (error) {
-          console.error('Error saving booking:', error);
-          alert('Der opstod en fejl ved oprettelse af bookingen.');
-        } else {
-          alert(
-            `Booking bekræftet for lokale ${selectedRoom} den ${dayjs(selectedDate).format('DD/MM/YYYY')} fra ${selectedTime}`
-          );
-          fetchBookings();
-        }
-      } catch (error) {
-        console.error('Unexpected error:', error);
-        alert('Der opstod en uventet fejl. Prøv igen senere.');
-      }
-    } else {
-      alert('Udfyld venligst alle felter for at booke et lokale.');
-    }
-  };
-
   return (
     <Grid>
-      {/* Modal til lokales billede */}
-      <Modal opened={modalOpen} onClose={() => setModalOpen(false)} title={`Lokale ${modalRoom?.id}`}>
-        {modalRoom && (
+      {/* Modal til valg af lokale */}
+      <Modal
+        opened={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={modalRoom ? `Lokale ${modalRoom.id}` : 'Vælg et lokale'}
+      >
+        {modalRoom ? (
           <div>
             <img
               src={getPlanImage(modalRoom.plan)}
               alt={`Plan for lokale ${modalRoom.id}`}
               style={{ width: '100%', marginBottom: '1rem' }}
             />
-            <Button fullWidth onClick={handleRoomSelect}>
+            <Button
+              fullWidth
+              onClick={() => {
+                setSelectedRoom(modalRoom.id);
+                setModalOpen(false);
+              }}
+            >
               Vælg Lokale {modalRoom.id}
             </Button>
           </div>
+        ) : (
+          <p>Ingen lokale valgt.</p>
         )}
       </Modal>
 
+      {/* Modal til visning af bookinger */}
+      <Modal
+        opened={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Mine bookinger"
+      >
+        {modalBookings.length > 0 ? (
+          <ul>
+            {modalBookings.map((b, index) => (
+              <li key={index}>
+                Lokale: {b.lokale_id}, Start: {dayjs(b.start_time).format('DD/MM/YYYY HH:mm')}, Slut: {dayjs(b.end_time).format('HH:mm')}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>Du har ingen bookinger endnu.</p>
+        )}
+      </Modal>
+
+      {/* Menu til brugerens profil */}
       {user && (
         <div style={{ position: 'absolute', top: 20, right: 20 }}>
           <Menu shadow="md" width={200}>
@@ -181,21 +189,16 @@ const LokaleOversigt = () => {
                 {user.email.slice(0, 2).toUpperCase()}
               </Avatar>
             </Menu.Target>
-
             <Menu.Dropdown>
               <Menu.Label>Min Profil</Menu.Label>
               <Menu.Item
                 onClick={() => {
                   if (bookings.length > 0) {
-                    const userBookings = bookings.map(
-                      (b) =>
-                        `Lokale: ${b.lokale_id}, Start: ${dayjs(b.start_time).format(
-                          'DD/MM/YYYY HH:mm'
-                        )}, Slut: ${dayjs(b.end_time).format('HH:mm')}`
-                    );
-                    alert(userBookings.join('\n'));
+                    setModalBookings(bookings); // Gem bookinger i state
+                    setIsModalOpen(true); // Åbn modal
                   } else {
-                    alert('Du har ingen bookinger endnu.');
+                    setModalBookings([]);
+                    setIsModalOpen(true); // Åbn modal selv uden bookinger
                   }
                 }}
               >
@@ -209,6 +212,7 @@ const LokaleOversigt = () => {
         </div>
       )}
 
+      {/* Liste over lokaler */}
       <Grid.Col span={6}>
         <Title mb="lg" style={{ textAlign: 'center' }}>
           Lokale Oversigt
@@ -237,6 +241,7 @@ const LokaleOversigt = () => {
         ))}
       </Grid.Col>
 
+      {/* Form til valg af tid og dato */}
       <Grid.Col span={6}>
         <Title order={5} mb="md" style={{ fontWeight: 'bold' }}>
           Jeg skal bruge et lokale den:
@@ -247,7 +252,7 @@ const LokaleOversigt = () => {
           placeholder="Vælg tidspunkt"
           data={timeOptions}
           value={selectedTime}
-          onChange={setSelectedTime}
+          onChange={(value: string | null) => setSelectedTime(value || null)}
           mb="md"
         />
         {selectedRoom && (
@@ -255,7 +260,10 @@ const LokaleOversigt = () => {
             Valgt Lokale: {selectedRoom}
           </Title>
         )}
-        <Checkbox label="Jeg er indforstået med vilkår og betingelser" mb="md" />
+        <Checkbox
+          label="Jeg er indforstået med vilkår og betingelser"
+          style={{ marginBottom: '1rem' }}
+        />
         <Button fullWidth onClick={handleSubmit}>
           VÆLG
         </Button>

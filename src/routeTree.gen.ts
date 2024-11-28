@@ -15,6 +15,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Route as rootRoute } from './routes/__root'
 import { Route as LokaleOversigtImport } from './routes/LokaleOversigt'
 import { Route as LoginImport } from './routes/Login'
+import { Route as BookingSuccessImport } from './routes/BookingSuccess'
+import { Route as BookingConfirmationImport } from './routes/BookingConfirmation'
 
 // Create Virtual Routes
 
@@ -40,10 +42,36 @@ const LoginRoute = LoginImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const BookingSuccessRoute = BookingSuccessImport.update({
+  id: '/BookingSuccess',
+  path: '/BookingSuccess',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const BookingConfirmationRoute = BookingConfirmationImport.update({
+  id: '/BookingConfirmation',
+  path: '/BookingConfirmation',
+  getParentRoute: () => rootRoute,
+} as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/BookingConfirmation': {
+      id: '/BookingConfirmation'
+      path: '/BookingConfirmation'
+      fullPath: '/BookingConfirmation'
+      preLoaderRoute: typeof BookingConfirmationImport
+      parentRoute: typeof rootRoute
+    }
+    '/BookingSuccess': {
+      id: '/BookingSuccess'
+      path: '/BookingSuccess'
+      fullPath: '/BookingSuccess'
+      preLoaderRoute: typeof BookingSuccessImport
+      parentRoute: typeof rootRoute
+    }
     '/Login': {
       id: '/Login'
       path: '/Login'
@@ -71,12 +99,16 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 export interface FileRoutesByFullPath {
+  '/BookingConfirmation': typeof BookingConfirmationRoute
+  '/BookingSuccess': typeof BookingSuccessRoute
   '/Login': typeof LoginRoute
   '/LokaleOversigt': typeof LokaleOversigtRoute
   '/about': typeof AboutLazyRoute
 }
 
 export interface FileRoutesByTo {
+  '/BookingConfirmation': typeof BookingConfirmationRoute
+  '/BookingSuccess': typeof BookingSuccessRoute
   '/Login': typeof LoginRoute
   '/LokaleOversigt': typeof LokaleOversigtRoute
   '/about': typeof AboutLazyRoute
@@ -84,6 +116,8 @@ export interface FileRoutesByTo {
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
+  '/BookingConfirmation': typeof BookingConfirmationRoute
+  '/BookingSuccess': typeof BookingSuccessRoute
   '/Login': typeof LoginRoute
   '/LokaleOversigt': typeof LokaleOversigtRoute
   '/about': typeof AboutLazyRoute
@@ -91,20 +125,40 @@ export interface FileRoutesById {
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/Login' | '/LokaleOversigt' | '/about'
+  fullPaths:
+    | '/BookingConfirmation'
+    | '/BookingSuccess'
+    | '/Login'
+    | '/LokaleOversigt'
+    | '/about'
   fileRoutesByTo: FileRoutesByTo
-  to: '/Login' | '/LokaleOversigt' | '/about'
-  id: '__root__' | '/Login' | '/LokaleOversigt' | '/about'
+  to:
+    | '/BookingConfirmation'
+    | '/BookingSuccess'
+    | '/Login'
+    | '/LokaleOversigt'
+    | '/about'
+  id:
+    | '__root__'
+    | '/BookingConfirmation'
+    | '/BookingSuccess'
+    | '/Login'
+    | '/LokaleOversigt'
+    | '/about'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
+  BookingConfirmationRoute: typeof BookingConfirmationRoute
+  BookingSuccessRoute: typeof BookingSuccessRoute
   LoginRoute: typeof LoginRoute
   LokaleOversigtRoute: typeof LokaleOversigtRoute
   AboutLazyRoute: typeof AboutLazyRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  BookingConfirmationRoute: BookingConfirmationRoute,
+  BookingSuccessRoute: BookingSuccessRoute,
   LoginRoute: LoginRoute,
   LokaleOversigtRoute: LokaleOversigtRoute,
   AboutLazyRoute: AboutLazyRoute,
@@ -120,10 +174,18 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
+        "/BookingConfirmation",
+        "/BookingSuccess",
         "/Login",
         "/LokaleOversigt",
         "/about"
       ]
+    },
+    "/BookingConfirmation": {
+      "filePath": "BookingConfirmation.tsx"
+    },
+    "/BookingSuccess": {
+      "filePath": "BookingSuccess.tsx"
     },
     "/Login": {
       "filePath": "Login.tsx"
