@@ -15,9 +15,6 @@ import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../supabase/getSupabaseClient';
 import logo from '../images/logo.svg';
-import type { DatePickerStylesNames } from '@mantine/dates';
-
-// Import PNG-filer
 import Plan1 from '../images/Plan1.png';
 import Plan2 from '../images/Plan2.png';
 import Plan3 from '../images/Plan3.png';
@@ -78,40 +75,48 @@ const LokaleOversigt = () => {
   };
 
   const handleRoomClick = (room: any) => {
+    setSelectedRoom(room.id);
     setModalRoom(room);
-    setSelectedRoom(room.id); // Gem det valgte lokale
     setModalOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleNavigateToConfirmation = () => {
     if (!selectedDate || !selectedTime || !selectedRoom) {
-      alert('Udfyld venligst alle felter for at booke et lokale.');
+      alert('Udfyld venligst alle felter før du fortsætter.');
       return;
     }
-  
-    const formattedDate = dayjs(selectedDate).format('YYYY-MM-DD'); // Format for konsistens
-    if (!dayjs(formattedDate).isValid()) {
-      alert('Ugyldig dato.');
-      return;
-    }
-  
+
     const selectedPlan = rooms.find((room) => room.id === selectedRoom)?.plan;
-    if (!selectedPlan) {
-      alert('Ugyldigt lokale eller etage.');
-      return;
-    }
-  
     navigate('/BookingConfirmation', {
       state: {
         room: selectedRoom,
-        date: formattedDate, // Overfør dato i konsistent format
+        date: dayjs(selectedDate).format('YYYY-MM-DD'),
         time: selectedTime,
         plan: selectedPlan,
         capacity: 4,
       },
     });
   };
-  
+
+  const handleDeleteBooking = async (bookingId: number) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId);
+
+      if (error) {
+        console.error('Error deleting booking:', error.message);
+        alert('Kunne ikke slette bookingen. Prøv igen.');
+      } else {
+        setBookings((prevBookings) => prevBookings.filter((booking) => booking.id !== bookingId));
+        alert('Booking slettet!');
+      }
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      alert('Der opstod en fejl.');
+    }
+  };
 
   const getPlanImage = (plan: string) => {
     switch (plan) {
@@ -186,52 +191,10 @@ const LokaleOversigt = () => {
 
       <div style={{ paddingTop: '80px' }}>
         <Grid>
-          {/* Modal for at vise bookinger */}
-          <Modal
-            opened={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            title="Mine Bookinger"
-          >
-            {bookings.length > 0 ? (
-              <ul>
-                {bookings.map((booking) => (
-                  <li key={booking.id}>
-                    Lokale: {booking.lokale_id}, Dato: {dayjs(booking.date).format('DD/MM/YYYY')}, Tid: {booking.time}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>Ingen bookinger fundet.</p>
-            )}
-          </Modal>
-
-          {/* Modal for at vælge lokale */}
-          <Modal
-            opened={modalOpen}
-            onClose={() => setModalOpen(false)}
-            title={modalRoom ? `Lokale ${modalRoom.id}` : 'Vælg et lokale'}
-          >
-            {modalRoom && (
-              <div>
-                <img
-                  src={getPlanImage(modalRoom.plan)}
-                  alt={`Plan for lokale ${modalRoom.id}`}
-                  style={{ width: '100%', marginBottom: '1rem' }}
-                />
-                <Button fullWidth onClick={() => setModalOpen(false)}>
-                  Vælg Lokale {modalRoom.id}
-                </Button>
-              </div>
-            )}
-          </Modal>
-
           <Grid.Col span={6}>
             <Title mb="lg" style={{ textAlign: 'center' }}>
               Lokale Oversigt
             </Title>
-            <p style={{ textAlign: 'center' }}>
-              Vælg venligst et lokale fra listen under:
-            </p>
             {['2', '3', '4'].map((plan) => (
               <Paper
                 radius="md"
@@ -250,9 +213,12 @@ const LokaleOversigt = () => {
                       key={room.id}
                       fullWidth
                       variant="light"
-                      color="blue"
+                      style={{
+                        backgroundColor: selectedRoom === room.id ? '#845EF7' : '#51cf66',
+                        color: '#fff',
+                        marginBottom: '0.5rem',
+                      }}
                       onClick={() => handleRoomClick(room)}
-                      mb="sm"
                     >
                       Lokale {room.id}
                     </Button>
@@ -261,64 +227,89 @@ const LokaleOversigt = () => {
             ))}
           </Grid.Col>
 
-          <Grid.Col span={6}>
-            <div style={{ textAlign: 'center' }}>
-              <Title order={5} mb="md">
-                Jeg skal bruge et lokale den:
-              </Title>
-              <DatePicker
-  value={selectedDate}
-  onChange={setSelectedDate}
-  mb="md"
-  styles={{
-    input: {
-      backgroundColor: 'transparent',
-      color: '#fff',
-      border: '1px solid #845EF7',
-      borderRadius: '4px',
-    },
-    dropdown: {
-      backgroundColor: '#2c2f33',
-      color: '#fff',
-    },
-  } as Partial<Record<DatePickerStylesNames, React.CSSProperties>>}
-/>
-
-              <Select
-                label="Tidspunkt"
-                placeholder="Vælg tidspunkt"
-                data={timeOptions}
-                value={selectedTime}
-                onChange={setSelectedTime}
-                mb="md"
-                styles={{
-                  input: {
-                    backgroundColor: 'transparent',
-                    color: '#fff',
-                    border: '1px solid #845EF7',
-                    borderRadius: '4px',
+          <Grid.Col span={6} style={{ textAlign: 'center' }}>
+            <Title order={5} mb="md">
+              Jeg skal bruge et lokale den:
+            </Title>
+            <DatePicker
+              value={selectedDate}
+              onChange={setSelectedDate}
+              styles={{
+                day: {
+                  color: '#fff',
+                  '&[data-selected]': {
+                    backgroundColor: '#845EF7',
+                    color: '#000',
                   },
-                }}
-              />
-              {selectedRoom && (
-                <Title order={6} mb="md" style={{ color: 'blue' }}>
-                  Valgt Lokale: {selectedRoom}
-                </Title>
-              )}
-              <Checkbox
-                label="Jeg accepterer vilkår og betingelser"
-                style={{ marginBottom: '1rem', color: '#fff' }}
-              />
-              <Button
-                fullWidth
-                onClick={handleSubmit}
-                style={{ backgroundColor: '#845EF7', color: '#fff' }}
-              >
-                VÆLG
-              </Button>
-            </div>
+                },
+              }}
+            />
+            <Select
+              label="Tidspunkt"
+              placeholder="Vælg tidspunkt"
+              data={timeOptions}
+              value={selectedTime}
+              onChange={setSelectedTime}
+              mb="md"
+            />
+            <Checkbox
+              label="Jeg accepterer vilkår og betingelser"
+              style={{ marginBottom: '1rem' }}
+            />
+            <Button
+              fullWidth
+              onClick={handleNavigateToConfirmation}
+              style={{ backgroundColor: '#845EF7', color: '#fff' }}
+            >
+              VÆLG
+            </Button>
           </Grid.Col>
         </Grid>
+        <Modal
+          opened={modalOpen}
+          onClose={() => setModalOpen(false)}
+          title={modalRoom ? `Lokale ${modalRoom.id}` : 'Vælg et lokale'}
+        >
+          {modalRoom && (
+            <div>
+              <img
+                src={getPlanImage(modalRoom.plan)}
+                alt={`Plan for lokale ${modalRoom.id}`}
+                style={{ width: '100%', marginBottom: '1rem' }}
+              />
+              <Button fullWidth onClick={() => setModalOpen(false)}>
+                Luk
+              </Button>
+            </div>
+          )}
+        </Modal>
+        <Modal
+          opened={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title="Mine Bookinger"
+        >
+          {bookings.length > 0 ? (
+            <ul>
+              {bookings.map((booking) => (
+                <li key={booking.id}>
+                  Lokale: {booking.lokale_id}, 
+                  Dato: {dayjs(booking.start_time).format('DD/MM/YYYY')}, 
+                  Tid: {dayjs(booking.start_time).format('HH:mm')} -{' '}
+                  {dayjs(booking.end_time).format('HH:mm')}
+                  <Button
+                    color="red"
+                    onClick={() => handleDeleteBooking(booking.id)}
+                    style={{ marginLeft: '1rem' }}
+                  >
+                    Slet
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>Ingen bookinger fundet.</p>
+          )}
+        </Modal>
       </div>
     </div>
   );

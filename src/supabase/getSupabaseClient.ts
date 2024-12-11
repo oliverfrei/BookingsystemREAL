@@ -7,6 +7,13 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error('Supabase URL eller nøgle mangler i miljøvariablerne');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
+
 
 export default supabase;

@@ -9,8 +9,8 @@ import BookingSuccess from './routes/BookingSuccess';
 function App() {
   return (
     <MantineProvider>
-      <Router>
-        <Routes>
+      <Router basename="/BookingsystemREAL"> {/* Tilføj basename */}
+        <Routes> 
           <Route path="/" element={<Login />} />
           <Route path="/LokaleOversigt" element={<LokaleOversigt />} />
           <Route path="/BookingConfirmation" element={<BookingConfirmation />} />

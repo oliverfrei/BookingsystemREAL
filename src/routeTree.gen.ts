@@ -13,6 +13,7 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as GlobalStylesImport } from './routes/globalStyles'
 import { Route as LokaleOversigtImport } from './routes/LokaleOversigt'
 import { Route as LoginImport } from './routes/Login'
 import { Route as BookingSuccessImport } from './routes/BookingSuccess'
@@ -29,6 +30,12 @@ const AboutLazyRoute = AboutLazyImport.update({
   path: '/about',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/about.lazy').then((d) => d.Route))
+
+const GlobalStylesRoute = GlobalStylesImport.update({
+  id: '/globalStyles',
+  path: '/globalStyles',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const LokaleOversigtRoute = LokaleOversigtImport.update({
   id: '/LokaleOversigt',
@@ -86,6 +93,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LokaleOversigtImport
       parentRoute: typeof rootRoute
     }
+    '/globalStyles': {
+      id: '/globalStyles'
+      path: '/globalStyles'
+      fullPath: '/globalStyles'
+      preLoaderRoute: typeof GlobalStylesImport
+      parentRoute: typeof rootRoute
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -103,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/BookingSuccess': typeof BookingSuccessRoute
   '/Login': typeof LoginRoute
   '/LokaleOversigt': typeof LokaleOversigtRoute
+  '/globalStyles': typeof GlobalStylesRoute
   '/about': typeof AboutLazyRoute
 }
 
@@ -111,6 +126,7 @@ export interface FileRoutesByTo {
   '/BookingSuccess': typeof BookingSuccessRoute
   '/Login': typeof LoginRoute
   '/LokaleOversigt': typeof LokaleOversigtRoute
+  '/globalStyles': typeof GlobalStylesRoute
   '/about': typeof AboutLazyRoute
 }
 
@@ -120,6 +136,7 @@ export interface FileRoutesById {
   '/BookingSuccess': typeof BookingSuccessRoute
   '/Login': typeof LoginRoute
   '/LokaleOversigt': typeof LokaleOversigtRoute
+  '/globalStyles': typeof GlobalStylesRoute
   '/about': typeof AboutLazyRoute
 }
 
@@ -130,6 +147,7 @@ export interface FileRouteTypes {
     | '/BookingSuccess'
     | '/Login'
     | '/LokaleOversigt'
+    | '/globalStyles'
     | '/about'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -137,6 +155,7 @@ export interface FileRouteTypes {
     | '/BookingSuccess'
     | '/Login'
     | '/LokaleOversigt'
+    | '/globalStyles'
     | '/about'
   id:
     | '__root__'
@@ -144,6 +163,7 @@ export interface FileRouteTypes {
     | '/BookingSuccess'
     | '/Login'
     | '/LokaleOversigt'
+    | '/globalStyles'
     | '/about'
   fileRoutesById: FileRoutesById
 }
@@ -153,6 +173,7 @@ export interface RootRouteChildren {
   BookingSuccessRoute: typeof BookingSuccessRoute
   LoginRoute: typeof LoginRoute
   LokaleOversigtRoute: typeof LokaleOversigtRoute
+  GlobalStylesRoute: typeof GlobalStylesRoute
   AboutLazyRoute: typeof AboutLazyRoute
 }
 
@@ -161,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   BookingSuccessRoute: BookingSuccessRoute,
   LoginRoute: LoginRoute,
   LokaleOversigtRoute: LokaleOversigtRoute,
+  GlobalStylesRoute: GlobalStylesRoute,
   AboutLazyRoute: AboutLazyRoute,
 }
 
@@ -178,6 +200,7 @@ export const routeTree = rootRoute
         "/BookingSuccess",
         "/Login",
         "/LokaleOversigt",
+        "/globalStyles",
         "/about"
       ]
     },
@@ -192,6 +215,9 @@ export const routeTree = rootRoute
     },
     "/LokaleOversigt": {
       "filePath": "LokaleOversigt.tsx"
+    },
+    "/globalStyles": {
+      "filePath": "globalStyles.tsx"
     },
     "/about": {
       "filePath": "about.lazy.jsx"
