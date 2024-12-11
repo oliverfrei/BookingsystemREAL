@@ -440,8 +440,6 @@ const BookingConfirmation = () => {
 
              style={{
 
-               margin: '2rem 0 1rem', // Keep existing spacing
-
                color: 'gray', // Match the gray color
 
                fontWeight: 400, // Align with the previous text style
